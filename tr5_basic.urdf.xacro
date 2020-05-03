@@ -1,0 +1,360 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="$(find tr5_description)/urdf/tr5.transmission.xacro" />
+    <!--<xacro:include filename="$(find ur_description)/urdf/ur.gazebo.xacro" />-->
+
+    <!--<xacro:property name="pi" value="3.14159265" />-->
+
+    <!-- @todo Inertia parameters -->
+
+    <xacro:property name="base_mass" value="4.0" />  <!-- This mass might be incorrect -->
+    <xacro:property name="shoulder_mass" value="3.7000" />
+    <xacro:property name="arm_mass" value="8.3930" />
+    <xacro:property name="upper_arm_mass" value="8.3930" />
+    <xacro:property name="forearm_mass" value="2.2750" />
+    <xacro:property name="wrist_1_mass" value="1.2190" />
+    <xacro:property name="wrist_2_mass" value="1.2190" />
+    <xacro:property name="gripper_mass" value="0.1879" />
+
+    <!-- link lengths used in model -->
+    <xacro:property name="base_height" value=".085" />
+    <xacro:property name="shoulder_off_x" value="0.08525" />
+    <xacro:property name="shoulder_height" value=".190" />
+    <xacro:property name="shoulder_length" value=".015" />
+    <xacro:property name="arm_length" value=".200" />
+    <xacro:property name="fore_arm_length" value=".130" />
+    <xacro:property name="wrist_length" value=".010" />
+    <xacro:property name="wrist_2_length" value=".046" />
+    <xacro:property name="gripper_width" value=".027" />
+    <xacro:property name="end_effector_len" value=".113" />
+    
+    <!-- TO BE COMPLETED -->
+    
+
+
+
+
+    <!-- limits model -->
+    <xacro:macro name="cylinder_inertial" params="radius length mass *origin">
+        <inertial>
+            <mass value="${mass}" />
+            <xacro:insert_block name="origin" />
+            <inertia ixx="${0.0833333 * mass * (3 * radius * radius + length * length)}" ixy="0.0" ixz="0.0"
+                     iyy="${0.0833333 * mass * (3 * radius * radius + length * length)}" iyz="0.0"
+                     izz="${0.5 * mass * radius * radius}" />
+        </inertial>
+    </xacro:macro>
+
+
+    <xacro:macro name="tr5_robot" params="prefix joint_limited">
+
+        <!-- Base %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+        <link name="${prefix}base_link" >
+            <visual>
+                <geometry>
+                    <mesh filename="package://tr5_description/meshes/TR5_Base.dae" />
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="0.250 .160 ${shoulder_height}"/>
+                </geometry>
+                <origin xyz="0.0 0.0 ${shoulder_height/2}" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.05" mass="${base_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>
+
+        <joint name="${prefix}shoulder_pan_joint" type="revolute">
+            <parent link="${prefix}base_link" />
+            <child link = "${prefix}shoulder_link" />
+            <origin xyz="${shoulder_off_x} 0.0 ${base_height}" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 0 1" />
+            <xacro:unless value="${joint_limited}">
+                <limit lower="-1.39626" upper="1.39626" effort="150.0" velocity="0.802851"/>
+            </xacro:unless>
+            <xacro:if value="${joint_limited}">
+                <limit lower="-1.39626" upper="1.39626" effort="150.0" velocity="0.802851"/>
+            </xacro:if>
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+
+
+        <!-- Shoulder %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+        <link name="${prefix}shoulder_link">
+            <visual>
+                <geometry>
+                    <mesh filename="package://tr5_description/meshes/TR5_Shoulder.dae" /> 
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder length="${shoulder_length/2}" radius="0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 175.0" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>
+
+        <joint name="${prefix}shoulder_lift_joint" type="revolute">
+            <parent link="${prefix}shoulder_link" />
+            <child link = "${prefix}upper_arm_link" />
+            <origin xyz="0.0 0.0 ${shoulder_height}" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 -1 0" />
+            <xacro:unless value="${joint_limited}">
+                <limit lower="-0.5" upper="1.22" effort="150.0" velocity="0.802851"/>
+            </xacro:unless>
+            <xacro:if value="${joint_limited}">
+                <limit lower="-0.5" upper="1.22" effort="150.0" velocity="0.802851"/>
+            </xacro:if>
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+
+
+        <!-- Upper Arm %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+        <link name="${prefix}upper_arm_link">
+            <visual>
+                <geometry>           
+                    <mesh filename="package://tr5_description/meshes/TR5_UpperArm.dae" /> 
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder length="${shoulder_length/2}" radius="0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 ${shoulder_length/2}" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>
+
+        <joint name="${prefix}elbow_joint" type="revolute">
+            <parent link="${prefix}upper_arm_link" />
+            <child link = "${prefix}fore_arm_link" />
+            <origin xyz="${arm_length} 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 -1 0" />
+            <xacro:unless value="${joint_limited}">
+                <limit lower="-1.74" upper="0" effort="150.0" velocity="0.802851"/>
+            </xacro:unless>
+            <xacro:if value="${joint_limited}">
+                <limit lower="-1.74" upper="0" effort="150.0" velocity="0.802851"/>
+            </xacro:if>
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+
+
+
+        <!-- Fore Arm %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+        <link name="${prefix}fore_arm_link">
+            <visual>
+                <geometry>           
+                    <mesh filename="package://tr5_description/meshes/TR5_ForeArm.dae" /> 
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder length="${shoulder_length/2}" radius="0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 ${shoulder_length/2}" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>
+
+        <joint name="${prefix}wrist_1_joint" type="revolute">
+            <parent link="${prefix}fore_arm_link" />
+            <child link = "${prefix}wrist_1_link" />
+            <origin xyz="${fore_arm_length} 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 1 0" />
+            <xacro:unless value="${joint_limited}">
+                <limit lower="-1.74" upper="1.74" effort="150.0" velocity="0.802851"/>
+            </xacro:unless>
+            <xacro:if value="${joint_limited}">
+                <limit lower="-1.74" upper="1.74" effort="150.0" velocity="0.802851"/>
+            </xacro:if>
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+
+
+        <!-- Wrist_pitch %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+        <link name="${prefix}wrist_1_link">
+            <visual>
+                <geometry>           
+                    <mesh filename="package://tr5_description/meshes/TR5_Wrist_1.dae" /> 
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder length="${shoulder_length/2}" radius="0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 ${shoulder_length/2}" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>
+
+        <joint name="${prefix}wrist_2_joint" type="revolute">
+            <parent link="${prefix}wrist_1_link" />
+            <child link = "${prefix}wrist_2_link" />
+            <origin xyz="${wrist_length} 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <axis xyz="1 0 0" />
+            <xacro:unless value="${joint_limited}">
+                <limit lower="-1.74" upper="1.74" effort="150.0" velocity="0.802851"/>
+            </xacro:unless>
+            <xacro:if value="${joint_limited}">
+                <limit lower="-1.74" upper="1.74" effort="150.0" velocity="0.802851"/>
+            </xacro:if>
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+
+
+        <!-- Wrist_roll %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+        <link name="${prefix}wrist_2_link">
+            <visual>
+                <geometry>           
+                    <mesh filename="package://tr5_description/meshes/TR5_Wrist_2.dae" /> 
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder length="${shoulder_length/2}" radius="0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 ${shoulder_length/2}" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>  
+        <joint name="${prefix}finger_left_joint" type="revolute">
+            <parent link="${prefix}wrist_2_link" />
+            <child link = "${prefix}finger_left_link" />
+            <origin xyz="${wrist_2_length} -${gripper_width} 0.0" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 0 -1" />
+            <xacro:unless value="${joint_limited}">
+                <limit lower="0" upper="0.47" effort="150.0" velocity="0.802851"/>
+            </xacro:unless>
+            <xacro:if value="${joint_limited}">
+                <limit lower="0" upper="0.47" effort="150.0" velocity="0.802851"/>
+            </xacro:if>
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+
+
+        <!-- GRIPPER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+        <link name="${prefix}finger_left_link">
+            <visual>
+                <geometry>           
+                    <mesh filename="package://tr5_description/meshes/TR5_Finger.dae" /> 
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="${pi} 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder length="${shoulder_length/2}" radius="0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 ${shoulder_length/2}" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>  
+
+        <joint name="${prefix}finger_right_joint" type="revolute">
+            <parent link="${prefix}wrist_2_link" />
+            <child link = "${prefix}finger_right_link" />
+            <origin xyz="${wrist_2_length} ${gripper_width} 0.0" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 0 1" />
+            <xacro:unless value="${joint_limited}">
+                <limit lower="0" upper="0.47" effort="150.0" velocity="0.802851"/>
+            </xacro:unless>
+            <xacro:if value="${joint_limited}">
+                <limit lower="0" upper="0.47" effort="150.0" velocity="0.802851"/>
+            </xacro:if>
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+        <link name="${prefix}finger_right_link">
+            <visual>
+                <geometry>           
+                    <mesh filename="package://tr5_description/meshes/TR5_Finger.dae" /> 
+                </geometry>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <material name="LightGrey">
+                    <color rgba="0.7 0.7 0.7 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder length="${shoulder_length/2}" radius="0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 ${shoulder_length/2}" rpy="0.0 0.0 0.0"/>
+            </collision>
+            <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
+                <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            </xacro:cylinder_inertial>
+        </link>  
+
+
+        <!-- end-effector_joint -> wrist_2_link-->
+        <link name = "${prefix}end_effector_link">
+            <visual>
+                <geometry>
+                    <sphere radius = "0.005"/>
+                </geometry>    
+
+                <material name = "Black">
+                    <color rgba = "0 0 0 1.0"/>
+                </material>
+            </visual>
+        </link>
+
+        <joint name = "${prefix}end_effector_joint" type = "fixed">
+            <parent link = "${prefix}wrist_2_link" />
+            <child link = "${prefix}end_effector_link" />
+            <origin xyz = "${end_effector_len} 0.0 0.0" rpy = "0 0 0" />
+        </joint>
+
+
+
+    </xacro:macro>
+</robot>
