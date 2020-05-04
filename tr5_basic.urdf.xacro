@@ -8,6 +8,9 @@
 
     <!-- @todo Inertia parameters -->
 
+    <xacro:property name="base_mass" value="4.0" />  <!-- CAll back function-->
+
+
     <xacro:property name="base_mass" value="4.0" />  <!-- This mass might be incorrect -->
     <xacro:property name="shoulder_mass" value="3.7000" />
     <xacro:property name="arm_mass" value="8.3930" />
